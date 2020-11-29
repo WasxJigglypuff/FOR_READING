@@ -4,7 +4,7 @@
 //
 
 #include "attack.hpp"
-#include <windmill/Windmill.hpp>
+#include "windmill/Windmill.hpp"
 #include "capture.hpp"
 #include "communicator.hpp"
 #include "imageshow.hpp"
@@ -34,23 +34,27 @@ int main()
 
     armor::DaHuaVision dahuaVision;
 
-    if (armor::stConfig.get<bool>("cap.is-video")){//打开视频或者垃圾摄像头
+    if (armor::stConfig.get<bool>("cap.is-video"))//打开视频或者垃圾摄像头
+    {
         cap = &lajiVision;
     }
     // else if(armor::stConfig.get<bool>("cap.is-mind"))
     // {
     //     cap = &mindVision;
     // }
-    else{
+    else
+    {
         cap = &dahuaVision;//打开大华摄像头
     }
 
     cap->init(); // 初始化
 
-    if (armor::stConfig.get<bool>("cap.is-video")){
+    if (armor::stConfig.get<bool>("cap.is-video"))
+    {
         cap->setCaptureROI(cv::Size2i(1280, 900), armor::CAP_ROI_CENTER_CENTER); // 采集ROI
     }
-    else{
+    else
+    {
         cap->setCaptureROI(cv::Size2i(1280, 900), armor::CAP_ROI_CENTER_CENTER); // 采集ROI
     }
     cap->play(); // 开始采集图像
@@ -71,8 +75,10 @@ int main()
              armor::stConfig.get<double>("auto.ki"),
              armor::stConfig.get<double>("auto.kd"));
 
-    for (int i = 0; i < threadNum; ++i) {//首先每个线程都会对attack、windmill进行初始化，之后会根据循环中i的值来为不同到线程分配不同到击打任务（自瞄或者风车击打）
-        attackThreads[i] = std::thread([cap, &isServer, i, &communicator, &pid]() {
+    for (int i = 0; i < threadNum; ++i) //首先每个线程都会对attack、windmill进行初始化，之后会根据循环中i的值来为不同到线程分配不同到击打任务（自瞄或者风车击打）
+    {
+        attackThreads[i] = std::thread([cap, &isServer, i, &communicator, &pid]() 
+        {
             armor::ImageShowClient isClient = isServer.getClient(i);
 
             /* 初始化 attack */
@@ -105,13 +111,16 @@ int main()
             float gYaw = 0.0;
             float gPitch = 0.0;
 
-            while ((cap->isOpened()) && !isServer.isWillExit()) {
+            while ((cap->isOpened()) && !isServer.isWillExit()) 
+            {
 
 
-                if (cap->wait_and_get(frame, timeStamp, [&communicator, &gYaw, &gPitch]() {
+                if (cap->wait_and_get(frame, timeStamp, [&communicator, &gYaw, &gPitch]() 
+                {
 
 //                    communicator.getGlobalAngle(&gYaw, &gPitch);
-                })) {
+                })) 
+                {
 
                     /* 刷新主线程窗口图像 */
                     isClient.update(frame, int(timeStamp / 1000));
@@ -126,17 +135,20 @@ int main()
                     //auto mode =  armor::RM_WINDMILL_SMALL_CLOCK;
                     isClient.addText(cv::format("mode: %x", int(mode)));
 
-                    switch (mode) {
+                    switch (mode)
+                    {
                         case armor::RM_WINDMILL_SMALL_CLOCK:
                         case armor::RM_WINDMILL_SMALL_ANTIC:
                         case armor::RM_WINDMILL_LARGE_CLOCK:
                         case armor::RM_WINDMILL_LARGE_ANTIC:
                             // 指定运行线程
-                            if (i == 0) {//i=0的线程跑风车
+                            if (i == 0) //i=0的线程跑风车
+                            {
                                 /* 大风车 */
                                 float pitch = 0.0;
                                 float yaw = 0.0;
-                                switch (mode) {//选择模式初始化参数（这是旧版，最新版未更新）
+                                switch (mode) //选择模式初始化参数（这是旧版，最新版未更新）
+                                {
                                     case armor::RM_WINDMILL_SMALL_CLOCK:
                                         isClient.addText("RM_WINDMILL_SMALL_CLOCK");
                                         pWindMill->delay = delay;
@@ -167,14 +179,17 @@ int main()
 
 
 
-                                if (pWindMill->run(frame, pitch, yaw, (double) cv::getTickCount())) {//有目标，运行风车击打
+                                if (pWindMill->run(frame, pitch, yaw, (double) cv::getTickCount())) //有目标，运行风车击打
+                                {
                                     communicator.send(0.0, 0.0,
                                                       armor::SEND_STATUS_WM_AIM, armor::SEND_STATUS_WM_FIND);
                                     isClient.addText(cv::format("send pitch:%0.2f", pitch));
                                     isClient.addText(cv::format("send yaw:%0.2f", yaw));
 
 
-                                } else {//无目标
+                                } 
+                                else //无目标
+                                {
                                     communicator.send(0.0, 0.0,
                                                       armor::SEND_STATUS_WM_AIM, armor::SEND_STATUS_WM_NO);
                                     PRINT_WARN("[windmill] no target find\n");
@@ -206,7 +221,9 @@ int main()
                     std::cout << "@@@@@@@@@@@@@@@ NOW MAX -> " << now_max << " ms\n";
                     isClient.clock("run");
 
-                } else {
+                } 
+                else 
+                {
                     PRINT_ERROR("capture wait_and_get() failed once\n");
                 }
 
